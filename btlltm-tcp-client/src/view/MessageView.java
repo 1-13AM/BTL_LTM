@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 package view;
-
+import view.helper.ViewStyleHelper;
 import java.awt.event.KeyEvent;
 import javax.swing.JOptionPane;
 import run.ClientRun;
@@ -29,11 +29,26 @@ public class MessageView extends javax.swing.JFrame {
                         "Do you want to leave chat?", "Leave chat?",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    ClientRun.socketHandler.leaveChat(userChat);
+                    ClientRun.getSocketHandler().leaveChat(userChat);
                     dispose();
                 }
             }
         });
+        
+        // Apply base styling
+        getContentPane().setBackground(ViewStyleHelper.BACKGROUND_COLOR);
+        
+        // Style panels
+        // ViewStyleHelper.stylePanel(panelMessage);
+        
+        // Style text areas
+        // messageArea.setFont(ViewStyleHelper.NORMAL_FONT);
+        // messageArea.setBackground(ViewStyleHelper.PANEL_BACKGROUND);
+        ViewStyleHelper.styleScrollPane(jScrollPane1);
+        
+        // Style buttons
+        ViewStyleHelper.styleButton(btnSend, ViewStyleHelper.PRIMARY_COLOR);
+        ViewStyleHelper.styleButton(btnLeaveChat, ViewStyleHelper.SECONDARY_COLOR);
     }
 
     public void setInfoUserChat (String username) {
@@ -50,7 +65,7 @@ public class MessageView extends javax.swing.JFrame {
         if (message.equals("")) {
             tfMessage.grabFocus();
         } else {
-            ClientRun.socketHandler.sendMessage(userChat, message);
+            ClientRun.getSocketHandler().sendMessage(userChat, message);
             tfMessage.setText("");
             tfMessage.grabFocus();
         }
@@ -143,7 +158,7 @@ public class MessageView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLeaveChatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLeaveChatActionPerformed
-        ClientRun.socketHandler.leaveChat(userChat);
+        ClientRun.getSocketHandler().leaveChat(userChat);
         dispose();
     }//GEN-LAST:event_btnLeaveChatActionPerformed
 

@@ -6,6 +6,16 @@
 package view;
 
 import run.ClientRun;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
 /**
  *
  * @author admin
@@ -16,8 +26,49 @@ public class LoginView extends javax.swing.JFrame {
      */
     public LoginView() {
         initComponents();
+        customizeComponents();
     }
 
+    private void customizeComponents() {
+        // Set modern look and feel
+        this.setBackground(new Color(245, 245, 245));
+        
+        // Style the title
+        jLabel1.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        jLabel1.setForeground(new Color(51, 51, 51));
+        
+        // Style input fields
+        tfUsername.setPreferredSize(new Dimension(200, 35));
+        tfPassword.setPreferredSize(new Dimension(200, 35));
+        
+        // Style labels
+        jLabel2.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        jLabel3.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // Style buttons
+        styleButton(btnLogin, new Color(0, 122, 255));
+        styleButton(btnChangeRegister, new Color(64, 64, 64));
+    }
+    
+    private void styleButton(JButton button, Color bgColor) {
+        button.setPreferredSize(new Dimension(200, 40));
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Add hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor);
+            }
+        });
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -129,7 +180,7 @@ public class LoginView extends javax.swing.JFrame {
         } else if (password.equals("")) {
                 tfPassword.grabFocus();
         } else {
-            ClientRun.socketHandler.login(userName, password);
+            ClientRun.getSocketHandler().login(userName, password);
         }
     }//GEN-LAST:event_btnLoginActionPerformed
 

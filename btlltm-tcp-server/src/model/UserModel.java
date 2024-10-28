@@ -24,6 +24,12 @@ public class UserModel implements Serializable {
         this.status = status;
     }
     
+    public UserModel (String userName, float score){
+        super();
+        this.userName = userName;
+        this.score = score;
+    }
+    
     public UserModel(String userName, String password, float score) {
     	super();
         this.userName = userName;

@@ -8,7 +8,7 @@ import view.InfoPlayerView;
 import view.LoginView;
 import view.MessageView;
 import view.RegisterView;
-
+import view.LeaderboardView;
 public class ClientRun {
     public enum SceneName {
         CONNECTSERVER,
@@ -17,7 +17,8 @@ public class ClientRun {
         HOMEVIEW,
         INFOPLAYER,
         MESSAGEVIEW,
-        GAMEVIEW
+        GAMEVIEW,
+        LEADERBOARDVIEW
     }
 
     // scenes
@@ -26,11 +27,14 @@ public class ClientRun {
     public static RegisterView registerView;
     public static HomeView homeView;
     public static GameView gameView;
-    public static InfoPlayerView infoPlayerView;
+    public static InfoPlayerView infoPlayerView;                        
     public static MessageView messageView;
+    public static LeaderboardView leaderboardView;
 
     // controller 
-    public static SocketHandler socketHandler;
+    // change
+    // public static SocketHandler socketHandler;
+    private SocketHandler socketHandler;
 
     public ClientRun() {
         socketHandler = new SocketHandler();
@@ -46,6 +50,7 @@ public class ClientRun {
         infoPlayerView = new InfoPlayerView();
         messageView = new MessageView();
         gameView = new GameView();
+        leaderboardView = new LeaderboardView();
     }
 
     public static void openScene(SceneName sceneName) {
@@ -79,6 +84,10 @@ public class ClientRun {
                     gameView = new GameView();
                     gameView.setVisible(true);
                     break;
+                case LEADERBOARDVIEW:
+                    leaderboardView = new LeaderboardView();
+                    leaderboardView.setVisible(true);
+                    break;
                 default:
                     break;
             }
@@ -109,6 +118,9 @@ public class ClientRun {
                 case GAMEVIEW:
                     gameView.dispose();
                     break;
+                case LEADERBOARDVIEW:
+                    leaderboardView.dispose();
+                    break;
                 default:
                     break;
             }
@@ -123,9 +135,23 @@ public class ClientRun {
         infoPlayerView.dispose();
         messageView.dispose();
         gameView.dispose();
+        leaderboardView.dispose();
+    }
+
+    public static SocketHandler getSocketHandler() {
+        return getInstance().socketHandler;
+    }
+
+    private static ClientRun instance;
+
+    public static ClientRun getInstance() {
+        if (instance == null) {
+            instance = new ClientRun();
+        }
+        return instance;
     }
 
     public static void main(String[] args) {
-        new ClientRun();
+        getInstance();
     }
 }

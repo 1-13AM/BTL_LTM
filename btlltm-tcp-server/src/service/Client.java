@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 import run.ServerRun;
 import helper.Question;
 import java.sql.SQLException;
+import java.util.List;
+import model.UserModel;
 
 /**
  *
@@ -108,13 +110,16 @@ public class Client implements Runnable {
                     case "START_GAME":
                         onReceiveStartGame(received);
                         break;
-                    case "SUBMIT_RESULT":
-                        onReceiveSubmitResult(received);
-                        break;
+                    // case "SUBMIT_RESULT":
+                    //     onReceiveSubmitResult(received);
+                    //     break;
                     case "ASK_PLAY_AGAIN":
                         onReceiveAskPlayAgain(received);
                         break;
-                        
+                    case "REQUEST_LEADERBOARD":
+                        onReceiveRequestLeaderboard(received);
+                        break;
+                    
                     case "EXIT":
                         running = false;
                 }
@@ -374,24 +379,6 @@ public class Client implements Runnable {
         // send result
         sendData("CHECK_STATUS_USER" + ";" + username + ";" + status);
     }
-            
-    private void onReceiveStartGame(String received) {
-        String[] splitted = received.split(";");
-        String user1 = splitted[1];
-        String user2 = splitted[2];
-        String roomId = splitted[3];
-        
-        String question1 = Question.renQuestion();
-        String question2 = Question.renQuestion();
-        String question3 = Question.renQuestion();
-        String question4 = Question.renQuestion();
-        
-        String data = "START_GAME;success;" + roomId + ";" + question1 + question2 + question3 + question4;
-        // Send question here
-        joinedRoom.resetRoom();
-        joinedRoom.broadcast(data);
-        joinedRoom.startGame();
-    } 
     
     private void onReceiveSubmitResult(String received) throws SQLException {
         String[] splitted = received.split(";");
@@ -458,7 +445,34 @@ public class Client implements Runnable {
         }
     }
         
-    
+    private void onReceiveRequestLeaderboard(String received) {
+    try {
+        List<UserModel> users = new UserController().getAllUsers();
+        users.sort((a, b) -> Float.compare(b.getScore(), a.getScore())); // Sort in descending order
+
+        StringBuilder leaderboardData = new StringBuilder("REQUEST_LEADERBOARD;");
+        leaderboardData.append(users.size()).append(";");
+
+        for (UserModel user : users) {
+            leaderboardData.append(user.getUserName()).append(";")
+                           .append(user.getScore()).append(";");
+        }
+
+        sendData(leaderboardData.toString());
+    } catch (SQLException e) {
+        e.printStackTrace();
+        sendData("REQUEST_LEADERBOARD;error;Failed to retrieve leaderboard data");
+        }
+    }
+
+    private void onReceiveStartGame(String received) {
+        String[] splitted = received.split(";");
+        String roomId = splitted[1];
+        
+        // send result
+        String msg = "START_GAME;success;" + roomId;
+        joinedRoom.broadcast(msg);
+    }
     // Close app
     private void onReceiveClose() {
         this.loginUser = null;
@@ -490,6 +504,5 @@ public class Client implements Runnable {
     public void setJoinedRoom(Room joinedRoom) {
         this.joinedRoom = joinedRoom;
     }
-    
     
 }

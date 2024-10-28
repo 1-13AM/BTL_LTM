@@ -10,7 +10,10 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import run.ClientRun;
+import view.LeaderboardView;
 
 public class SocketHandler {
      
@@ -31,6 +34,7 @@ public class SocketHandler {
 
             // establish the connection with server port 
             s = new Socket();
+            
             s.connect(new InetSocketAddress(ip, port), 4000);
             System.out.println("Connected to " + ip + ":" + port + ", localport:" + s.getLocalPort());
 
@@ -115,16 +119,24 @@ public class SocketHandler {
                     case "CHECK_STATUS_USER":
                         onReceiveCheckStatusUser(received);
                         break;
-                    case "START_GAME":
-                        onReceiveStartGame(received);
-                        break; 
-                    case "RESULT_GAME":
-                        onReceiveResultGame(received);
-                        break;
                     case "ASK_PLAY_AGAIN":
                         onReceiveAskPlayAgain(received);
                         break;
-                        
+                    case "REQUEST_LEADERBOARD":
+                        onReceiveRequestLeaderboard(received);
+                        break;
+                    case "RESULT_GAME":
+                        onReceiveResultGame(received);
+                        break;
+                    case "NEW_ROUND":
+                        onReceiveNewRound(received);
+                        break;
+                    case "ROUND_RESULT":
+                        onReceiveRoundResult(received);
+                        break;
+                    case "GAME_END":
+                        onReceiveGameEnd(received);
+                        break;
                     case "EXIT":
                         running = false;
                 }
@@ -216,30 +228,10 @@ public class SocketHandler {
     public void startGame (String userInvited) { 
         sendData("START_GAME;" + loginUser + ";" + userInvited + ";" + roomIdPresent);
     }
-    
-    public void submitResult (String competitor) { 
-        String result1 = ClientRun.gameView.getSelectedButton1();
-        String result2 = ClientRun.gameView.getSelectedButton2();
-        String result3 = ClientRun.gameView.getSelectedButton3();
-        String result4 = ClientRun.gameView.getSelectedButton4();
-        if (result1 == null || result2 == null || result3 == null || result4 == null) {
-            ClientRun.gameView.showMessage("Don't leave blank!");
-        } else {
-            ClientRun.gameView.pauseTime();
-            // Handle calculate time
-            String[] splitted = ClientRun.gameView.pbgTimer.getString().split(":");
-            String countDownTime = splitted[1];
-            int time = 30 - Integer.parseInt(countDownTime);
-            
-            String data = ClientRun.gameView.getA1() + ";" + ClientRun.gameView.getB1() + ";" + result1 + ";"
-                        + ClientRun.gameView.getA2() + ";" + ClientRun.gameView.getB2() + ";" + result2 + ";"
-                        + ClientRun.gameView.getA3() + ";" + ClientRun.gameView.getB3() + ";" + result3 + ";"
-                        + ClientRun.gameView.getA4() + ";" + ClientRun.gameView.getB4() + ";" + result4 + ";"
-                        + time;
-            
-            sendData("SUBMIT_RESULT;" + loginUser + ";" + competitor + ";" + roomIdPresent + ";" + data);
-            ClientRun.gameView.afterSubmit();
-        }
+
+    // get leaderboard
+    public void requestLeaderboard() {
+        sendData("REQUEST_LEADERBOARD");
     }
     
     public void acceptPlayAgain() {
@@ -518,48 +510,6 @@ public class SocketHandler {
         ClientRun.homeView.setStatusCompetitor(status);
     }
     
-    private void onReceiveStartGame(String received) {
-        // get status from data
-        String[] splitted = received.split(";");
-        String status = splitted[1];
-
-        if (status.equals("success")) {
-            String a1 = splitted[3];
-            String b1 = splitted[4];
-            String answer1a = splitted[5];
-            String answer1b = splitted[6];
-            String answer1c = splitted[7];
-            String answer1d = splitted[8];
-            ClientRun.gameView.setQuestion1(a1, b1, answer1a, answer1b, answer1c, answer1d);
-            
-            String a2 = splitted[9];
-            String b2 = splitted[10];
-            String answer2a = splitted[11];
-            String answer2b = splitted[12];
-            String answer2c = splitted[13];
-            String answer2d = splitted[14];
-            ClientRun.gameView.setQuestion2(a2, b2, answer2a, answer2b, answer2c, answer2d);
-            
-            String a3 = splitted[15];
-            String b3 = splitted[16];
-            String answer3a = splitted[17];
-            String answer3b = splitted[18];
-            String answer3c = splitted[19];
-            String answer3d = splitted[20];
-            ClientRun.gameView.setQuestion3(a3, b3, answer3a, answer3b, answer3c, answer3d);
-            
-            String a4 = splitted[21];
-            String b4 = splitted[22];
-            String answer4a = splitted[23];
-            String answer4b = splitted[24];
-            String answer4c = splitted[25];
-            String answer4d = splitted[26];
-            ClientRun.gameView.setQuestion4(a4, b4, answer4a, answer4b, answer4c, answer4d);
-            
-            ClientRun.gameView.setStartGame(30);
-        }
-    }
-    
     private void onReceiveResultGame(String received) {
         // get status from data
         String[] splitted = received.split(";");
@@ -598,6 +548,65 @@ public class SocketHandler {
         }
     }  
     
+    private void onReceiveRequestLeaderboard(String received) {
+        String[] splitted = received.split(";");
+        int userCount = Integer.parseInt(splitted[1]);
+
+        Vector<Vector<Object>> leaderboardData = new Vector<>();
+        Vector<String> columnNames = new Vector<>();
+        columnNames.add("Rank");
+        columnNames.add("Username");
+        columnNames.add("Score");
+
+        for (int i = 0; i < userCount; i++) {
+            Vector<Object> row = new Vector<>();
+            row.add(0); // Placeholder for rank
+            row.add(splitted[2 + i * 2]);
+            row.add(Float.parseFloat(splitted[3 + i * 2]));
+            leaderboardData.add(row);
+        }
+
+        // Sort the leaderboard data by score in ascending order
+        leaderboardData.sort((a, b) -> Float.compare((Float) a.get(2), (Float) b.get(2)));
+
+        // Update ranks
+        for (int i = 0; i < leaderboardData.size(); i++) {
+            leaderboardData.get(i).set(0, i + 1);
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            ClientRun.leaderboardView.setLeaderboardData(leaderboardData, columnNames);
+            ClientRun.leaderboardView.setVisible(true);
+        });
+    }
+
+    public void submitGuess(float guess) {
+        sendData("SUBMIT_GUESS;" + loginUser + ";" + roomIdPresent + ";" + guess);
+    }
+    
+    private void onReceiveNewRound(String received) {
+        String[] splitted = received.split(";");
+        String product = splitted[1];
+        ClientRun.gameView.setCurrentProduct(product);
+        ClientRun.gameView.startNewRound();
+    }
+    
+    private void onReceiveRoundResult(String received) {
+        String[] splitted = received.split(";");
+        float actualPrice = Float.parseFloat(splitted[1]);
+        float playerGuess = Float.parseFloat(splitted[2]);
+        float competitorGuess = Float.parseFloat(splitted[3]);
+        float playerScore = Float.parseFloat(splitted[4]);
+        float competitorScore = Float.parseFloat(splitted[5]);
+        ClientRun.gameView.showRoundResult(actualPrice, playerGuess, competitorGuess, playerScore, competitorScore);
+    }
+    
+    private void onReceiveGameEnd(String received) {
+        String[] splitted = received.split(";");
+        String winner = splitted[1];
+        float finalScore = Float.parseFloat(splitted[2]);
+        ClientRun.gameView.showGameEnd(winner, finalScore);
+    }
     
     // get set
     public String getLoginUser() {

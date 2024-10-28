@@ -42,9 +42,13 @@ public class ConnectServer extends javax.swing.JFrame {
         jLabel1.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         jLabel1.setText("CONNECT TO SERVER");
 
-        txIP.setEditable(false);
         txIP.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         txIP.setText("127.0.0.1");
+        txIP.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txIPActionPerformed(evt);
+            }
+        });
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel2.setText("IP");
@@ -52,7 +56,6 @@ public class ConnectServer extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel3.setText("PORT");
 
-        txPort.setEditable(false);
         txPort.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         txPort.setText("2000");
 
@@ -134,12 +137,15 @@ public class ConnectServer extends javax.swing.JFrame {
         connect(ip, port);
     }//GEN-LAST:event_btnConnectActionPerformed
 
-    private void connect(String ip, int port) {
+    private void txIPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txIPActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txIPActionPerformed
 
+    private void connect(String ip, int port) {
         // connect to server
         new Thread(() -> {
             // call controller
-            String result = ClientRun.socketHandler.connect(ip, port);
+            String result = ClientRun.getSocketHandler().connect(ip, port);
 
             // check result
             if (result.equals("success")) {

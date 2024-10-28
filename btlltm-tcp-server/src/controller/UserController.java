@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import connection.DatabaseConnection;
+import java.util.ArrayList;
+import java.util.List;
 import model.UserModel;
 /**
  *
@@ -19,15 +21,17 @@ import model.UserModel;
  */
 public class UserController {
     //  SQL
-    private final String INSERT_USER = "INSERT INTO users (username, password, score, win, draw, lose, avgCompetitor, avgTime) VALUES (?, ?, 0, 0, 0, 0, 0, 0)";
+    private final String INSERT_USER = "INSERT INTO user (username, password, score, win, draw, lose, avgCompetitor, avgTime) VALUES (?, ?, 0, 0, 0, 0, 0, 0)";
     
-    private final String CHECK_USER = "SELECT userId from users WHERE username = ? limit 1";
+    private final String CHECK_USER = "SELECT userId from user WHERE username = ? limit 1";
     
-    private final String LOGIN_USER = "SELECT username, password, score FROM users WHERE username=? AND password=?";
+    private final String LOGIN_USER = "SELECT username, password, score FROM user WHERE username=? AND password=?";
     
-    private final String GET_INFO_USER = "SELECT username, password, score, win, draw, lose, avgCompetitor, avgTime FROM users WHERE username=?";
+    private final String GET_INFO_USER = "SELECT username, password, score, win, draw, lose, avgCompetitor, avgTime FROM user WHERE username=?";
     
-    private final String UPDATE_USER = "UPDATE users SET score = ?, win = ?, draw = ?, lose = ?, avgCompetitor = ?, avgTime = ? WHERE username=?";
+    private final String UPDATE_USER = "UPDATE user SET score = ?, win = ?, draw = ?, lose = ?, avgCompetitor = ?, avgTime = ? WHERE username=?";
+    
+    private final String GET_ALL_USERS = "SELECT username, score FROM user ORDER BY score DESC";
     //  Instance
     private final Connection con;
     
@@ -41,7 +45,7 @@ public class UserController {
             PreparedStatement p = con.prepareStatement(CHECK_USER);
             p.setString(1, username);
             ResultSet r = p.executeQuery();
-            if (r.first()) {
+            if (r.next()) {
                 return "failed;" + "User Already Exit";
             } else {
                 r.close();
@@ -67,13 +71,14 @@ public class UserController {
             p.setString(2, password);
             ResultSet r = p.executeQuery();
             
-            if (r.first()) {
+            if (r.next()) {
                 float score = r.getFloat("score");
                 return "success;" + username + ";" + score;
             } else {
                 return "failed;" + "Please enter the correct account password!";
             }
         } catch (SQLException e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -140,4 +145,19 @@ public class UserController {
         }   
         return null;
     }
+    
+    public List<UserModel> getAllUsers() throws SQLException {
+    List<UserModel> users = new ArrayList<>();
+    try (PreparedStatement p = con.prepareStatement(GET_ALL_USERS);
+         ResultSet r = p.executeQuery()) {
+        while (r.next()) {
+            UserModel user = new UserModel();
+            user.setUserName(r.getString("username"));
+            user.setScore(r.getFloat("score"));
+            users.add(user);
+        }
+    }
+    return users;
+}
+    
 }

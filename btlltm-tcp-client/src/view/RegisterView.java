@@ -5,8 +5,16 @@
  */
 package view;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
 import run.ClientRun;
+import javax.swing.border.*;
 /**
  *
  * @author admin
@@ -17,6 +25,58 @@ public class RegisterView extends javax.swing.JFrame {
      */
     public RegisterView() {
         initComponents();
+        customizeComponents();
+    }
+
+    private void customizeComponents() {
+        // Set modern look and feel
+        this.setBackground(new Color(245, 245, 245));
+        
+        // Style the title
+        jLabel1.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        jLabel1.setForeground(new Color(51, 51, 51));
+        jLabel1.setText("Create Account");
+        
+        // Style input fields with rounded borders
+        styleTextField(tfUsername);
+        styleTextField(tfPassword);
+        
+        // Style labels
+        jLabel2.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        jLabel3.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // Style buttons
+        styleButton(btnRegister, new Color(40, 167, 69));
+        styleButton(btnChangeLogin, new Color(64, 64, 64));
+    }
+
+    private void styleTextField(JTextField textField) {
+        textField.setPreferredSize(new Dimension(200, 35));
+        textField.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(204, 204, 204), 1, true),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    }
+
+    private void styleButton(JButton button, Color bgColor) {
+        button.setPreferredSize(new Dimension(200, 40));
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Add hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor);
+            }
+        });
     }
 
     /**
@@ -160,7 +220,7 @@ public class RegisterView extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(btnRegister, "Confirm Password is false!");
                 tfConfirmPassword.grabFocus();
         } else {
-           ClientRun.socketHandler.register(userName, password);
+           ClientRun.getSocketHandler().register(userName, password);
         }
     }//GEN-LAST:event_btnRegisterActionPerformed
 

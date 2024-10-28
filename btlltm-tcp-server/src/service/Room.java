@@ -28,7 +28,16 @@ public class Room {
     String waitingTime= "00:00";
 
     public LocalDateTime startedTime;
-
+    
+    private int currentRound = 0;
+    private final int maxRounds = 10;
+    private String currentProduct;
+    private float currentPrice;
+    private float player1Guess;
+    private float player2Guess;
+    private float player1Score = 0;
+    private float player2Score = 0;
+    
     public Room(String id) {
         // room id
         this.id = id;
@@ -41,7 +50,7 @@ public class Room {
     public void startGame() {
         gameStarted = true;
         
-        matchTimer = new CountDownTimer(31);
+        matchTimer = new CountDownTimer(10);
         matchTimer.setTimerCallBack(
             null,
             (Callable) () -> {
@@ -60,6 +69,99 @@ public class Room {
         );
     }
     
+    private void startNewRound() {
+        currentRound++;
+        if (currentRound <= maxRounds) {
+            currentProduct = getRandomProduct();
+            currentPrice = getRandomPrice();
+            broadcast("NEW_ROUND;" + currentProduct);
+            resetRoundData();
+            matchTimer.restart();
+        } else {
+            endGame();
+        }
+    }
+    
+    private void resetRoundData() {
+        player1Guess = 0;
+        player2Guess = 0;
+        resultClient1 = null;
+        resultClient2 = null;
+    }
+    
+    public void handleGuess(Client client, float guess) {
+        if (client == client1) {
+            player1Guess = guess;
+            resultClient1 = "SUBMITTED";
+        } else {
+            player2Guess = guess;
+            resultClient2 = "SUBMITTED";
+        }
+
+        if (resultClient1 != null && resultClient2 != null) {
+            endRound();
+        }
+    }
+    
+    private void calculateRoundResult() {
+        float roundScore1 = 0;
+        float roundScore2 = 0;
+
+        if (player1Guess > currentPrice && player2Guess > currentPrice) {
+            if (player1Guess < player2Guess) roundScore1 = 1;
+            else if (player2Guess < player1Guess) roundScore2 = 1;
+            else {
+                roundScore1 = 0.5f;
+                roundScore2 = 0.5f;
+            }
+        } else if (player1Guess <= currentPrice && player2Guess <= currentPrice) {
+            if (player1Guess > player2Guess) roundScore1 = 1;
+            else if (player2Guess > player1Guess) roundScore2 = 1;
+            else {
+                roundScore1 = 0.5f;
+                roundScore2 = 0.5f;
+            }
+        } else if (player1Guess <= currentPrice) {
+            roundScore1 = 1;
+        } else {
+            roundScore2 = 1;
+        }
+
+        player1Score += roundScore1;
+        player2Score += roundScore2;
+
+        broadcast("ROUND_RESULT;" + currentPrice + ";" + player1Guess + ";" + player2Guess + ";" + player1Score + ";" + player2Score);
+    }
+    
+    private void endRound() {
+        matchTimer.pause();
+        calculateRoundResult();
+        startNewRound();
+    }
+    
+    private void endGame() {
+        gameStarted = false;
+        String winner = (player1Score > player2Score) ? client1.getLoginUser() : 
+                        (player2Score > player1Score) ? client2.getLoginUser() : "DRAW";
+        float finalScore = Math.max(player1Score, player2Score);
+        broadcast("GAME_END;" + winner + ";" + finalScore);
+        updateUserScores(winner);
+    }
+    
+    private void updateUserScores(String winner) {
+        try {
+            if (winner.equals("DRAW")) {
+                draw();
+            } else if (winner.equals(client1.getLoginUser())) {
+                client1Win(0);
+            } else {
+                client2Win(0);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+     
     public void waitingClientTimer() {
         waitingTimer = new CountDownTimer(12);
         waitingTimer.setTimerCallBack(
@@ -97,95 +199,14 @@ public class Room {
         waitingTime = "00:00";
     }
     
-    public String handleResultClient() throws SQLException {
-        int timeClient1 = 0;
-        int timeClient2 = 0;
-        
-        if (resultClient1 != null) {
-            String[] splitted1 = resultClient1.split(";");
-            timeClient1 = Integer.parseInt(splitted1[16]);
-        }
-        if (resultClient2 != null) {
-            String[] splitted2 = resultClient2.split(";");
-            timeClient2 = Integer.parseInt(splitted2[16]);
-        }
-        
-        if (resultClient1 == null & resultClient2 == null) {
-            draw();
-            return "DRAW";
-        } else if (resultClient1 != null && resultClient2 == null) {
-            if (calculateResult(resultClient1) > 0) {
-                client1Win(timeClient1);
-                return client1.getLoginUser();
-            } else {
-                draw();
-                return "DRAW";
-            }
-        } else if (resultClient1 == null && resultClient2 != null) {
-            if (calculateResult(resultClient2) > 0) {
-                client2Win(timeClient2);
-                return client2.getLoginUser();
-            } else {
-                draw();
-                return "DRAW";
-            }
-        } else if (resultClient1 != null && resultClient2 != null) {
-            int pointClient1 = calculateResult(resultClient1);
-            int pointClient2 = calculateResult(resultClient2);
-            
-            if (pointClient1 > pointClient2) {
-                client1Win(timeClient1);
-                return client1.getLoginUser();
-            } else if (pointClient1 < pointClient2) {
-                client2Win(timeClient2);
-                return client2.getLoginUser();
-            } else {
-                draw();
-                return "DRAW";
-            }
-        }
-        return null;
+    private String getRandomProduct() {
+        // Implement logic to get a random product
+        return "Random Product " + (int)(Math.random() * 100);
     }
-    
-    public int calculateResult (String received) {
-        String[] splitted = received.split(";");
-        
-        String user1 = splitted[1];
-        
-        String a1 = splitted[4];
-        String b1 = splitted[5];
-        String r1 = splitted[6];
-        String a2 = splitted[7];
-        String b2 = splitted[8];
-        String r2 = splitted[9];
-        String a3 = splitted[10];
-        String b3 = splitted[11];
-        String r3 = splitted[12];
-        String a4 = splitted[13];
-        String b4 = splitted[14];
-        String r4 = splitted[15];
-        
-        int i = 0;
-        int c1 = Integer.parseInt(a1) + Integer.parseInt(b1);
-        int c2 = Integer.parseInt(a2) + Integer.parseInt(b2);
-        int c3 = Integer.parseInt(a3) + Integer.parseInt(b3);
-        int c4 = Integer.parseInt(a4) + Integer.parseInt(b4);
-        
-        if (c1 == Integer.parseInt(r1)) {
-            i++;
-        } 
-        if (c2 == Integer.parseInt(r2)) {
-            i++;
-        } 
-        if (c3 == Integer.parseInt(r3)) {
-            i++;
-        } 
-        if (c4 == Integer.parseInt(r4)) {
-            i++;
-        } 
-        
-        System.out.println(user1 + " : " + i + " cau dung");
-        return i;
+
+    private float getRandomPrice() {
+        // Implement logic to get a random price
+        return (float)(Math.random() * 1000);
     }
 
     public void draw () throws SQLException {
@@ -198,18 +219,18 @@ public class Room {
         user1.setScore(user1.getScore()+ 0.5f);
         user2.setScore(user2.getScore()+ 0.5f);
         
-        int totalMatchUser1 = user1.getWin() + user1.getDraw() + user1.getLose();
-        int totalMatchUser2 = user2.getWin() + user2.getDraw() + user2.getLose();
-        
-        float newAvgCompetitor1 = (totalMatchUser1 * user1.getAvgCompetitor() + user2.getScore()) / (totalMatchUser1 + 1);
-        float newAvgCompetitor2 = (totalMatchUser2 * user1.getAvgCompetitor() + user1.getScore()) / (totalMatchUser2 + 1);
+//        int totalMatchUser1 = user1.getWin() + user1.getDraw() + user1.getLose();
+//        int totalMatchUser2 = user2.getWin() + user2.getDraw() + user2.getLose();
+//        
+//        float newAvgCompetitor1 = (totalMatchUser1 * user1.getAvgCompetitor() + user2.getScore()) / (totalMatchUser1 + 1);
+//        float newAvgCompetitor2 = (totalMatchUser2 * user1.getAvgCompetitor() + user1.getScore()) / (totalMatchUser2 + 1);
         
 //        newAvgCompetitor1 = Math.round(newAvgCompetitor1 * 100) / 100;
 //        newAvgCompetitor2 = Math.round(newAvgCompetitor2 * 100) / 100;
         
-        user1.setAvgCompetitor(newAvgCompetitor1);
-        user2.setAvgCompetitor(newAvgCompetitor2);
-        
+//        user1.setAvgCompetitor(newAvgCompetitor1);
+//        user2.setAvgCompetitor(newAvgCompetitor2);
+//        
         new UserController().updateUser(user1);
         new UserController().updateUser(user2);
     }
@@ -223,18 +244,18 @@ public class Room {
         
         user1.setScore(user1.getScore()+ 1);
         
-        int totalMatchUser1 = user1.getWin() + user1.getDraw() + user1.getLose();
-        int totalMatchUser2 = user2.getWin() + user2.getDraw() + user2.getLose();
-        
-        float newAvgCompetitor1 = (totalMatchUser1 * user1.getAvgCompetitor() + user2.getScore()) / (totalMatchUser1 + 1);
-        float newAvgCompetitor2 = (totalMatchUser2 * user1.getAvgCompetitor() + user1.getScore()) / (totalMatchUser2 + 1);
-        
-        user1.setAvgCompetitor(newAvgCompetitor1);
-        user2.setAvgCompetitor(newAvgCompetitor2);
-        
-        float newAvgTime1 = (totalMatchUser1 * user1.getAvgTime() + time) / (totalMatchUser1 + 1);
-        System.out.println("newAvgTime1: " + newAvgTime1);
-        user1.setAvgTime(newAvgTime1);
+//        int totalMatchUser1 = user1.getWin() + user1.getDraw() + user1.getLose();
+//        int totalMatchUser2 = user2.getWin() + user2.getDraw() + user2.getLose();
+//        
+//        float newAvgCompetitor1 = (totalMatchUser1 * user1.getAvgCompetitor() + user2.getScore()) / (totalMatchUser1 + 1);
+//        float newAvgCompetitor2 = (totalMatchUser2 * user1.getAvgCompetitor() + user1.getScore()) / (totalMatchUser2 + 1);
+//        
+//        user1.setAvgCompetitor(newAvgCompetitor1);
+//        user2.setAvgCompetitor(newAvgCompetitor2);
+//        
+//        float newAvgTime1 = (totalMatchUser1 * user1.getAvgTime() + time) / (totalMatchUser1 + 1);
+//        System.out.println("newAvgTime1: " + newAvgTime1);
+//        user1.setAvgTime(newAvgTime1);
         
         new UserController().updateUser(user1);
         new UserController().updateUser(user2);
@@ -249,18 +270,18 @@ public class Room {
         
         user2.setScore(user2.getScore()+ 1);
         
-        int totalMatchUser1 = user1.getWin() + user1.getDraw() + user1.getLose();
-        int totalMatchUser2 = user2.getWin() + user2.getDraw() + user2.getLose();
-        
-        float newAvgCompetitor1 = (totalMatchUser1 * user1.getAvgCompetitor() + user2.getScore()) / (totalMatchUser1 + 1);
-        float newAvgCompetitor2 = (totalMatchUser2 * user1.getAvgCompetitor() + user1.getScore()) / (totalMatchUser2 + 1);
-        
-        user1.setAvgCompetitor(newAvgCompetitor1);
-        user2.setAvgCompetitor(newAvgCompetitor2);
-        
-        float newAvgTime2 = (totalMatchUser2 * user2.getAvgTime() + time) / (totalMatchUser2 + 1);
-        System.out.println("newAvgTime2: " + newAvgTime2);
-        user2.setAvgTime(newAvgTime2);
+//        int totalMatchUser1 = user1.getWin() + user1.getDraw() + user1.getLose();
+//        int totalMatchUser2 = user2.getWin() + user2.getDraw() + user2.getLose();
+//        
+//        float newAvgCompetitor1 = (totalMatchUser1 * user1.getAvgCompetitor() + user2.getScore()) / (totalMatchUser1 + 1);
+//        float newAvgCompetitor2 = (totalMatchUser2 * user1.getAvgCompetitor() + user1.getScore()) / (totalMatchUser2 + 1);
+//        
+//        user1.setAvgCompetitor(newAvgCompetitor1);
+//        user2.setAvgCompetitor(newAvgCompetitor2);
+//        
+//        float newAvgTime2 = (totalMatchUser2 * user2.getAvgTime() + time) / (totalMatchUser2 + 1);
+//        System.out.println("newAvgTime2: " + newAvgTime2);
+//        user2.setAvgTime(newAvgTime2);
         
         new UserController().updateUser(user1);
         new UserController().updateUser(user2);
@@ -417,3 +438,4 @@ public class Room {
     
     
 }
+    

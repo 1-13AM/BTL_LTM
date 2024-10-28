@@ -5,12 +5,14 @@
  */
 package view;
 
+import java.util.Enumeration;
 import java.util.Vector;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
+import view.helper.ViewStyleHelper;
 import javax.swing.table.DefaultTableModel;
 import run.ClientRun;
-
+import javax.swing.*;
+import java.awt.*;
+import javax.swing.border.*;
 /**
  *
  * @author admin
@@ -27,8 +29,28 @@ public class HomeView extends javax.swing.JFrame {
     public HomeView() {
         initComponents();
         
+        // Apply base styling
+        getContentPane().setBackground(ViewStyleHelper.BACKGROUND_COLOR);
+        
+        // Style header elements
+        ViewStyleHelper.styleLabel(jLabel1, ViewStyleHelper.TITLE_FONT);
+        ViewStyleHelper.styleLabel(infoUsername, ViewStyleHelper.SUBHEADER_FONT);
+        ViewStyleHelper.styleLabel(infoUserScore, ViewStyleHelper.NORMAL_FONT);
+        
+        // Style action buttons
+        ViewStyleHelper.styleButton(btnPlay, ViewStyleHelper.SUCCESS_COLOR);
+        ViewStyleHelper.styleButton(btnMessage, ViewStyleHelper.PRIMARY_COLOR);
+        ViewStyleHelper.styleButton(btnRefresh, ViewStyleHelper.SECONDARY_COLOR);
+        ViewStyleHelper.styleButton(btnGetInfo, ViewStyleHelper.PRIMARY_COLOR);
+        ViewStyleHelper.styleButton(btnLeaderboard, ViewStyleHelper.PRIMARY_COLOR);
+        ViewStyleHelper.styleButton(btnLogout, ViewStyleHelper.DANGER_COLOR);
+        ViewStyleHelper.styleButton(btnExit, ViewStyleHelper.DANGER_COLOR);
+        
+        // Style table and scroll pane
+        ViewStyleHelper.styleTable(tblUser);
+        ViewStyleHelper.styleScrollPane(jScrollPane2);
     }
-
+    
     public void setStatusCompetitor (String status) {
         statusCompetitor = status;
     }
@@ -70,6 +92,7 @@ public class HomeView extends javax.swing.JFrame {
         btnLogout = new javax.swing.JButton();
         btnGetInfo = new javax.swing.JButton();
         btnExit = new javax.swing.JButton();
+        btnLeaderboard = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -150,6 +173,13 @@ public class HomeView extends javax.swing.JFrame {
             }
         });
 
+        btnLeaderboard.setText("Leaderboard");
+        btnLeaderboard.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnLeaderboardActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -169,10 +199,12 @@ public class HomeView extends javax.swing.JFrame {
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 649, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGroup(layout.createSequentialGroup()
                             .addComponent(btnPlay, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGap(42, 42, 42)
+                            .addGap(27, 27, 27)
                             .addComponent(btnMessage)
-                            .addGap(42, 42, 42)
+                            .addGap(29, 29, 29)
                             .addComponent(btnGetInfo)
+                            .addGap(18, 18, 18)
+                            .addComponent(btnLeaderboard)
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGap(18, 18, 18)
@@ -199,8 +231,9 @@ public class HomeView extends javax.swing.JFrame {
                     .addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnPlay, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnGetInfo, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(29, Short.MAX_VALUE))
+                    .addComponent(btnGetInfo, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnLeaderboard, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(28, Short.MAX_VALUE))
         );
 
         pack();
@@ -215,9 +248,9 @@ public class HomeView extends javax.swing.JFrame {
             String userSelected = String.valueOf(tblUser.getValueAt(row, 0));
             
             // check user online/in game
-            ClientRun.socketHandler.checkStatusUser(userSelected);
+            ClientRun.getSocketHandler().checkStatusUser(userSelected);
             switch (statusCompetitor) {
-                case "ONLINE" -> ClientRun.socketHandler.inviteToPlay(userSelected);
+                case "ONLINE" -> ClientRun.getSocketHandler().inviteToPlay(userSelected);
                 case "OFFLINE" -> JOptionPane.showMessageDialog(HomeView.this, "This user is offline." , "ERROR", JOptionPane.ERROR_MESSAGE);
                 case "INGAME" -> JOptionPane.showMessageDialog(HomeView.this, "This user is in game." , "ERROR", JOptionPane.ERROR_MESSAGE);
             }
@@ -231,23 +264,23 @@ public class HomeView extends javax.swing.JFrame {
         } else {
             String userSelected = String.valueOf(tblUser.getValueAt(row, 0));
             System.out.println(userSelected);
-            if (userSelected.equals(ClientRun.socketHandler.getLoginUser())) {
+            if (userSelected.equals(ClientRun.getSocketHandler().getLoginUser())) {
                 JOptionPane.showMessageDialog(HomeView.this, "You can not chat yourself." , "ERROR", JOptionPane.ERROR_MESSAGE);
             } else {
-               ClientRun.socketHandler.inviteToChat(userSelected);
+               ClientRun.getSocketHandler().inviteToChat(userSelected);
             }
         }
     }//GEN-LAST:event_btnMessageActionPerformed
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         // get UserOnline
-        ClientRun.socketHandler.getListOnline();
+        ClientRun.getSocketHandler().getListOnline();
     }//GEN-LAST:event_btnRefreshActionPerformed
 
     private void btnLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogoutActionPerformed
         JFrame frame = new JFrame("Logout");
         if (JOptionPane.showConfirmDialog(frame, "Confirm if you want Logout", "Logout", JOptionPane.YES_NO_OPTION)==JOptionPane.YES_NO_OPTION){
-            ClientRun.socketHandler.logout();
+            ClientRun.getSocketHandler().logout();
             
         } 
     }//GEN-LAST:event_btnLogoutActionPerformed
@@ -259,10 +292,10 @@ public class HomeView extends javax.swing.JFrame {
         } else {
             String userSelected = String.valueOf(tblUser.getValueAt(row, 0));
             System.out.println(userSelected);
-            if (userSelected.equals(ClientRun.socketHandler.getLoginUser())) {
+            if (userSelected.equals(ClientRun.getSocketHandler().getLoginUser())) {
                 JOptionPane.showMessageDialog(HomeView.this, "You can not see yourself." , "ERROR", JOptionPane.ERROR_MESSAGE);
             } else {
-               ClientRun.socketHandler.getInfoUser(userSelected);
+               ClientRun.getSocketHandler().getInfoUser(userSelected);
             }
         }
     }//GEN-LAST:event_btnGetInfoActionPerformed
@@ -270,10 +303,15 @@ public class HomeView extends javax.swing.JFrame {
     private void btnExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExitActionPerformed
         JFrame frame = new JFrame("EXIT");
         if (JOptionPane.showConfirmDialog(frame, "Confirm if you want exit", "EXIT", JOptionPane.YES_NO_OPTION)==JOptionPane.YES_NO_OPTION){
-            ClientRun.socketHandler.close();
+            ClientRun.getSocketHandler().close();
             System.exit(0);
         } 
     }//GEN-LAST:event_btnExitActionPerformed
+
+    private void btnLeaderboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLeaderboardActionPerformed
+        // TODO add your handling code here:
+        ClientRun.getSocketHandler().requestLeaderboard();
+    }//GEN-LAST:event_btnLeaderboardActionPerformed
    
     /**
      * @param args the command line arguments
@@ -283,6 +321,7 @@ public class HomeView extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnExit;
     private javax.swing.JButton btnGetInfo;
+    private javax.swing.JButton btnLeaderboard;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnMessage;
     private javax.swing.JButton btnPlay;
@@ -294,3 +333,4 @@ public class HomeView extends javax.swing.JFrame {
     private javax.swing.JTable tblUser;
     // End of variables declaration//GEN-END:variables
 }
+
