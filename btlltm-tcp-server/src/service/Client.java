@@ -337,6 +337,7 @@ public class Client implements Runnable {
         String roomId = splitted[3];
         
         joinedRoom.userLeaveGame(user1);
+        joinedRoom.gameEndLeaveGame();
         
         this.cCompetitor = null;
         this.joinedRoom = null;
@@ -354,6 +355,7 @@ public class Client implements Runnable {
         // send result
         String msg = "LEAVE_TO_GAME;" + "success;" + user1 + ";" + user2;
         ServerRun.clientManager.sendToAClient(user2, msg);
+     
     }      
     
     private void onReceiveCheckStatusUser(String received) {

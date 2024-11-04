@@ -117,6 +117,8 @@ public class Room {
         float roundScore1 = 0;
         float roundScore2 = 0;
         String winner = "";
+        
+        
         if (player1Guess > currentPrice && player2Guess > currentPrice) {
             if (player1Guess < player2Guess) roundScore1 = 1;
             else if (player2Guess < player1Guess) roundScore2 = 1;
@@ -136,7 +138,16 @@ public class Room {
         } else {
             roundScore2 = 1;
         }
-
+        
+        if (player1Guess == 0 && player2Guess != 0){
+            roundScore2 = 1;
+            roundScore1 = 0;
+        }
+        else if (player1Guess != 0 && player2Guess == 0){
+            roundScore1 = 1;
+            roundScore2 = 0;
+        }
+        
         player1Score += roundScore1;
         player2Score += roundScore2;
         
@@ -193,6 +204,23 @@ public class Room {
         // Then broadcast game end
         // broadcast("GAME_END;" + winner + ";" + Math.max(player1Score, player2Score));
         broadcast("GAME_END;" + winner + ";" + loser + ";" + Math.max(player1Score, player2Score) + ";" + Math.min(player1Score, player2Score));
+        // Reset game state
+        gameStarted = false;
+        currentRound = 0;
+        player1Score = 0;
+        player2Score = 0;
+        
+        // Clear client game states
+        client1.setJoinedRoom(null);
+        client2.setJoinedRoom(null);
+        
+        // Remove room from server
+        ServerRun.roomManager.remove(this);
+    }
+    
+    public void gameEndLeaveGame(){
+        // pause timer;
+        matchTimer.pause();
         // Reset game state
         gameStarted = false;
         currentRound = 0;
